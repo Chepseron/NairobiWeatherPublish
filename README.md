@@ -1,6 +1,8 @@
 # NairobiWeatherPublish
 
 
+
+This is a java application that consumes daily weather updates from the endpoint http://api.weatherstack.com/current and publishes the results on Rabbit MQ
 The application runs using the following environment
 
 
