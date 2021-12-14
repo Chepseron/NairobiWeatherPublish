@@ -12,11 +12,13 @@ import com.rabbitmq.client.DeliverCallback;
 import java.io.*;
 import java.net.*;
 import java.net.URL;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.Date;
 
 /**
  *
@@ -30,13 +32,25 @@ public class NairobiWeatherJava extends TimerTask {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        NairobiWeatherJava weather = new NairobiWeatherJava();
-        weather.CheckWeather();
+        TimerTask timerTask = new NairobiWeatherJava();
+        //running timer task as daemon thread
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(timerTask, 0, 10 * 1000);
+        System.out.println("CheckWeather started");
+        try {
+            Thread.sleep(120000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void run() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        System.out.println("Check weather started at:" + new Date());
+        CheckWeather();
+        System.out.println("Check weather finished at:" + new Date());
+
     }
 
     public String CheckWeather() {
@@ -44,6 +58,7 @@ public class NairobiWeatherJava extends TimerTask {
             //declare the Rabbit MQ connection Factory
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost("localhost");
+            factory.setPort(5672);
             //call the API with the access key
             URL weather = new URL("http://api.weatherstack.com/current?access_key=35dc6112635dbe90e71c8772ebf0b8ee&query=Nairobi");
             URLConnection yc = weather.openConnection();
@@ -67,7 +82,7 @@ public class NairobiWeatherJava extends TimerTask {
 
                 System.out.println("Address+++++++" + conn.getAddress());
                 System.out.println("Port+++++++" + conn.getPort());
-                channel.queueDeclare("Weather", false, false, false, null);
+                channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
                 String message = "TIME :" + current.getString("observation_time")
                         + "\nTEMPERATURE:" + current.getInt("temperature")
                         + "\nWEATHER_CODE:" + current.getInt("weather_code")
